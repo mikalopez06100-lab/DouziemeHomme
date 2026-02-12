@@ -20,6 +20,7 @@ export function QuestionCard({ question, onCorrect, onWrong }: QuestionCardProps
       question.answerIndex
     );
     return { ...question, choices, answerIndex };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- shuffle une seule fois par question.id
   }, [question.id]);
 
   const handleChoice = (index: number) => {

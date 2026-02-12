@@ -36,10 +36,11 @@ export function CategoryPicker({ onSelect }: CategoryPickerProps) {
             onClick={() => onSelect(cat)}
             className={[
               "w-full py-4 px-5 rounded-2xl",
-              "bg-slate-900/95 text-white font-bold text-sm uppercase tracking-wide",
+              "bg-slate-900/95 font-bold text-sm uppercase tracking-wide",
               "border-2 transition hover:scale-[1.02]",
               ui.borderColor,
               ui.glow,
+              ui.textColor,
             ].join(" ")}
           >
             {ui.label}

@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { useGameSessionStore } from "@/store/gameSession";
-import { LogoDouziemeHomme } from "@/components/LogoDouziemeHomme";
 
 export default function SetupPage() {
   const router = useRouter();
@@ -36,7 +35,7 @@ export default function SetupPage() {
     <main className="min-h-screen min-h-[100dvh] bg-accueil text-white flex flex-col relative">
       <div className="absolute inset-0 bg-black/50 pointer-events-none" aria-hidden />
       <div className="relative flex flex-col flex-1 items-center py-6 px-4 max-w-xl mx-auto">
-        <LogoDouziemeHomme className="mb-2" />
+        <div className="h-20 shrink-0" aria-hidden />
 
         <h1 className="text-2xl font-extrabold uppercase tracking-wide mb-4">
           Paramétrer la partie

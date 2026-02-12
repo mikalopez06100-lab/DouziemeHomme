@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { useGameSessionStore } from "@/store/gameSession";
-import { LogoDouziemeHomme } from "@/components/LogoDouziemeHomme";
 import { CategoryPicker } from "@/components/game/CategoryPicker";
 import { QuestionCard } from "@/components/game/QuestionCard";
 import { useCurrentQuestion } from "@/hooks/useCurrentQuestion";
@@ -48,10 +47,10 @@ export default function GamePage() {
     <main className="min-h-screen min-h-[100dvh] bg-accueil text-white flex flex-col relative">
       <div className="absolute inset-0 bg-black/50 pointer-events-none" aria-hidden />
       <div className="relative flex flex-col flex-1 items-center py-6 px-4 max-w-xl mx-auto">
-        <LogoDouziemeHomme className="mb-2" />
+        <div className="h-20 shrink-0" aria-hidden />
 
-        <p className="text-xs uppercase tracking-wide text-slate-400 mb-4">
-          Joueur actuel : <span className="font-bold text-white">{currentPlayer.name}</span>
+        <p className="text-base sm:text-lg font-bold uppercase tracking-wide text-white mb-4 drop-shadow-md">
+          Joueur actuel : <span className="text-amber-300">{currentPlayer.name}</span>
         </p>
 
         {!currentCategory ? (

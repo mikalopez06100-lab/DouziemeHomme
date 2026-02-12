@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { LogoDouziemeHomme } from "@/components/LogoDouziemeHomme";
 
 export default function HomePage() {
   return (
     <main className="min-h-screen min-h-[100dvh] bg-accueil text-white flex flex-col relative">
       <div className="absolute inset-0 bg-black/50 pointer-events-none" aria-hidden />
       <div className="relative flex-1 flex flex-col items-center justify-between py-6 px-4 sm:py-10 bg-accueil-content">
-        <LogoDouziemeHomme className="mb-2 sm:mb-4 shrink-0" />
+        <div className="h-20 sm:h-24 shrink-0" aria-hidden />
 
         <div className="bg-accueil-card shrink-0">
           <section className="text-center">

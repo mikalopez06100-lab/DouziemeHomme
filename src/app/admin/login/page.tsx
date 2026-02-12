@@ -14,11 +14,26 @@ export default function AdminLoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr("");
+    if (!email.trim() || !password) {
+      setErr("Veuillez remplir l'email et le mot de passe.");
+      return;
+    }
     try {
-      await signIn(email, password);
+      await signIn(email.trim(), password);
       router.replace("/admin");
     } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Connexion impossible");
+      const msg = e instanceof Error ? e.message : "";
+      if (msg.includes("auth/invalid-credential") || msg.includes("auth/wrong-password") || msg.includes("auth/user-not-found")) {
+        setErr("Email ou mot de passe incorrect.");
+      } else if (msg.includes("auth/invalid-email")) {
+        setErr("Adresse email invalide.");
+      } else if (msg.includes("auth/too-many-requests")) {
+        setErr("Trop de tentatives. Réessayez plus tard.");
+      } else if (msg.includes("auth/operation-not-allowed") || msg.includes("unauthorized")) {
+        setErr("Connexion refusée. Vérifiez que le domaine est autorisé dans Firebase (Authentication → Paramètres → Domaines autorisés).");
+      } else {
+        setErr(msg || "Connexion impossible. Vérifiez vos identifiants et que le site est autorisé dans Firebase.");
+      }
     }
   };
 
@@ -32,6 +47,7 @@ export default function AdminLoginPage() {
         <h1 className="text-xl font-bold text-white">Admin – Connexion</h1>
         <input
           type="email"
+          autoComplete="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -39,6 +55,7 @@ export default function AdminLoginPage() {
         />
         <input
           type="password"
+          autoComplete="current-password"
           placeholder="Mot de passe"
           value={password}
           onChange={(e) => setPassword(e.target.value)}

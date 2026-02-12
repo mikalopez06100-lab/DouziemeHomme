@@ -2,26 +2,30 @@ export type QuestionCategory = "club" | "foot" | "culture_locale" | "enfants";
 
 export const CATEGORY_UI: Record<
   QuestionCategory,
-  { label: string; borderColor: string; glow: string }
+  { label: string; borderColor: string; glow: string; textColor: string }
 > = {
   enfants: {
     label: "DÉBUTANT",
-    borderColor: "border-cyan-400",
-    glow: "shadow-[0_0_20px_rgba(34,211,238,0.7)]",
+    borderColor: "border-cyan-300",
+    glow: "shadow-[0_0_20px_rgba(34,211,238,0.9),0_0_40px_rgba(34,211,238,0.4)]",
+    textColor: "text-cyan-200",
   },
   culture_locale: {
     label: "CULTURE LOCALE",
-    borderColor: "border-amber-400",
-    glow: "shadow-[0_0_20px_rgba(251,191,36,0.7)]",
+    borderColor: "border-yellow-300",
+    glow: "shadow-[0_0_20px_rgba(250,204,21,0.9),0_0_40px_rgba(250,204,21,0.4)]",
+    textColor: "text-yellow-200",
   },
   foot: {
     label: "CULTURE FOOT",
-    borderColor: "border-pink-400",
-    glow: "shadow-[0_0_20px_rgba(244,114,182,0.7)]",
+    borderColor: "border-fuchsia-300",
+    glow: "shadow-[0_0_20px_rgba(217,70,239,0.9),0_0_40px_rgba(217,70,239,0.4)]",
+    textColor: "text-fuchsia-200",
   },
   club: {
     label: "CULTURE CLUB",
-    borderColor: "border-lime-400",
-    glow: "shadow-[0_0_20px_rgba(163,230,53,0.7)]",
+    borderColor: "border-lime-300",
+    glow: "shadow-[0_0_20px_rgba(132,204,22,0.9),0_0_40px_rgba(132,204,22,0.4)]",
+    textColor: "text-lime-200",
   },
 };
