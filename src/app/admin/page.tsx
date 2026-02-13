@@ -36,6 +36,7 @@ export default function AdminPage() {
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [importText, setImportText] = useState("");
   const [importPreview, setImportPreview] = useState<{
     ok: number;
@@ -47,23 +48,26 @@ export default function AdminPage() {
   const [importExcelProgress, setImportExcelProgress] = useState<{ current: number; total: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
-      const list = await fetchAllQuestions(categoryFilter || undefined);
+      const list = await fetchAllQuestions(undefined);
       setQuestions(list);
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  }, [categoryFilter]);
+  }, []);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  const filtered = questions.filter((q) => {
+  const byCategory = questions.filter((q) =>
+    !categoryFilter || q.category === categoryFilter
+  );
+  const filtered = byCategory.filter((q) => {
     if (!search.trim()) return true;
     const s = search.toLowerCase();
     return (
@@ -71,6 +75,12 @@ export default function AdminPage() {
       q.choices.some((c) => c.toLowerCase().includes(s))
     );
   });
+
+  const countByCategory = CATEGORIES.reduce(
+    (acc, c) => ({ ...acc, [c]: questions.filter((q) => q.category === c).length }),
+    {} as Record<QuestionCategory, number>
+  );
+  const totalCount = questions.length;
 
   const handleCreate = async (
     data: Omit<Question, "id"> | Partial<Question>
@@ -84,7 +94,7 @@ export default function AdminPage() {
     try {
       await updateQuestion(id, data);
       setEditingId(null);
-      load();
+      await load(true);
     } catch (e) {
       console.error(e);
       alert("Erreur lors de l'enregistrement. Vérifiez la console (F12).");
@@ -93,13 +103,21 @@ export default function AdminPage() {
 
   const handleToggle = async (id: string) => {
     await toggleQuestionActive(id);
-    load();
+    await load(true);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Supprimer cette question ?")) return;
     await deleteQuestion(id);
     load();
+  };
+
+  const handleSignOut = () => {
+    signOut().then(() => {
+      window.location.href = "/admin/login";
+    }).catch(() => {
+      window.location.href = "/admin/login";
+    });
   };
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -175,48 +193,6 @@ export default function AdminPage() {
     <main className="min-h-screen min-h-[100dvh] bg-accueil text-white flex flex-col relative p-4 md:p-6">
       <div className="absolute inset-0 bg-black/50 pointer-events-none" aria-hidden />
       <div className="relative max-w-4xl mx-auto w-full flex-1">
-        {/* Bandeau Import en masse — tout en haut, très visible */}
-        <section
-          className="mb-6 rounded-xl p-4 border-2 border-amber-400 bg-amber-500/20"
-          style={{ boxShadow: "0 0 0 2px rgba(251,191,36,0.5)" }}
-          aria-label="Import en masse"
-        >
-          <h2 className="text-xl font-bold mb-2 text-amber-200">Import en masse</h2>
-          <button
-            type="button"
-            onClick={handleImportExcelPack}
-            disabled={importExcelLoading}
-            className="bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-black font-bold px-5 py-2.5 rounded-lg text-base"
-          >
-            {importExcelLoading && importExcelProgress
-              ? `Import… ${importExcelProgress.current}/${importExcelProgress.total}`
-              : "Importer les 355 questions (export Excel)"}
-          </button>
-          <p className="text-sm text-slate-300 mt-2">Ou :</p>
-          <div className="flex flex-wrap gap-2 mt-1">
-            <input ref={fileInputRef} type="file" accept=".csv,.txt" onChange={handleImportFile} className="hidden" />
-            <button type="button" onClick={() => fileInputRef.current?.click()} className="bg-slate-600 hover:bg-slate-500 px-3 py-1.5 rounded text-sm">
-              Fichier CSV
-            </button>
-            <button type="button" onClick={handleParsePreview} disabled={!importText.trim()} className="bg-slate-600 hover:bg-slate-500 disabled:opacity-50 px-3 py-1.5 rounded text-sm">
-              Prévisualiser
-            </button>
-            {importPreview && importPreview.ok > 0 && (
-              <button type="button" onClick={handleConfirmImport} disabled={importing} className="bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded text-sm font-medium">
-                {importing ? "Import…" : `Créer ${importPreview.ok} question(s)`}
-              </button>
-            )}
-          </div>
-          <textarea
-            placeholder="Coller un CSV ici (catégorie;énoncé;réponse1;réponse2;réponse3;bonne_réponse)"
-            value={importText}
-            onChange={(e) => { setImportText(e.target.value); setImportPreview(null); setImportDone(null); }}
-            className="w-full h-20 mt-2 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm font-mono resize-y"
-          />
-          {importPreview && <p className="mt-1 text-sm text-slate-300">{importPreview.ok} valide(s). {importPreview.errors.length > 0 && `${importPreview.errors.length} erreur(s).`}</p>}
-          {importDone && <p className="mt-1 text-emerald-400 font-medium">Terminé : {importDone.created} créée(s), {importDone.failed} échec(s).</p>}
-        </section>
-
         <header className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
             <Link href="/" className="text-slate-400 hover:text-white text-sm">
@@ -225,12 +201,53 @@ export default function AdminPage() {
             <h1 className="text-2xl font-bold">Admin – Questions</h1>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setShowImport(!showImport)}
+              className="text-sm bg-sky-600 hover:bg-sky-500 px-3 py-1.5 rounded"
+            >
+              {showImport ? "Masquer import" : "Import en masse"}
+            </button>
             <span className="text-sm text-slate-400">{user?.email}</span>
-            <button type="button" onClick={() => signOut()} className="text-sm bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded">
+            <button type="button" onClick={handleSignOut} className="text-sm bg-red-700 hover:bg-red-600 px-3 py-1.5 rounded font-medium">
               Déconnexion
             </button>
           </div>
         </header>
+
+        {showImport && (
+          <section className="mb-6 rounded-xl p-4 border border-slate-600 bg-slate-800/80">
+            <h2 className="text-lg font-bold mb-2">Import en masse</h2>
+            <div className="flex flex-wrap gap-2 mb-2">
+              <button
+                type="button"
+                onClick={handleImportExcelPack}
+                disabled={importExcelLoading}
+                className="bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-black font-bold px-4 py-2 rounded text-sm"
+              >
+                {importExcelLoading && importExcelProgress
+                  ? `Import… ${importExcelProgress.current}/${importExcelProgress.total}`
+                  : "Importer les 355 questions (Excel)"}
+              </button>
+              <input ref={fileInputRef} type="file" accept=".csv,.txt" onChange={handleImportFile} className="hidden" />
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="bg-slate-600 hover:bg-slate-500 px-3 py-1.5 rounded text-sm">Fichier CSV</button>
+              <button type="button" onClick={handleParsePreview} disabled={!importText.trim()} className="bg-slate-600 hover:bg-slate-500 disabled:opacity-50 px-3 py-1.5 rounded text-sm">Prévisualiser</button>
+              {importPreview && importPreview.ok > 0 && (
+                <button type="button" onClick={handleConfirmImport} disabled={importing} className="bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded text-sm font-medium">
+                  {importing ? "Import…" : `Créer ${importPreview.ok} question(s)`}
+                </button>
+              )}
+            </div>
+            <textarea
+              placeholder="Coller un CSV (catégorie;énoncé;réponse1;réponse2;réponse3;bonne_réponse)"
+              value={importText}
+              onChange={(e) => { setImportText(e.target.value); setImportPreview(null); setImportDone(null); }}
+              className="w-full h-20 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm font-mono resize-y"
+            />
+            {importPreview && <p className="mt-1 text-sm text-slate-300">{importPreview.ok} valide(s). {importPreview.errors.length > 0 && `${importPreview.errors.length} erreur(s).`}</p>}
+            {importDone && <p className="mt-1 text-emerald-400 font-medium">Terminé : {importDone.created} créée(s), {importDone.failed} échec(s).</p>}
+          </section>
+        )}
 
         <div className="flex flex-wrap gap-4 mb-4">
           <select
@@ -262,6 +279,21 @@ export default function AdminPage() {
             + Nouvelle question
           </button>
         </div>
+
+        {!loading && (
+          <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-300">
+            <span className="font-medium text-white">
+              {filtered.length} question{filtered.length !== 1 ? "s" : ""} affichée{filtered.length !== 1 ? "s" : ""}
+            </span>
+            <span className="text-slate-500">|</span>
+            {CATEGORIES.map((c) => (
+              <span key={c}>
+                {CATEGORY_UI[c].label} : <strong className="text-slate-200">{countByCategory[c]}</strong>
+              </span>
+            ))}
+            <span className="text-slate-500">(total : {totalCount})</span>
+          </div>
+        )}
 
         {importPreview && importPreview.errors.length > 0 && (
           <ul className="mb-4 text-red-300 text-sm list-disc list-inside">

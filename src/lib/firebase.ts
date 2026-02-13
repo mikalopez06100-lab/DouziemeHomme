@@ -19,10 +19,12 @@ function getFirebase(): { auth: Auth; db: Firestore } {
     );
   }
 
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.trim() ?? "";
+  const authDomainRaw = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN?.trim();
   const firebaseConfig = {
     apiKey,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN?.trim(),
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.trim(),
+    authDomain: authDomainRaw || (projectId ? `${projectId}.firebaseapp.com` : undefined),
+    projectId: projectId || undefined,
     storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET?.trim(),
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID?.trim(),
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID?.trim(),
@@ -44,6 +46,11 @@ export const auth = new Proxy({} as Auth, {
     return getFirebase().auth[prop as keyof Auth];
   },
 });
+
+/** Retourne l'instance Auth réelle (pour signIn, onAuthStateChanged, etc.). */
+export function getAuthInstance(): Auth {
+  return getFirebase().auth;
+}
 
 /** Retourne l'instance Firestore réelle (requise par collection(), doc(), etc.). */
 export function getDb(): Firestore {

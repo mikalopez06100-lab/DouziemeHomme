@@ -13,7 +13,7 @@ import {
   signOut as fbSignOut,
   type User,
 } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { getAuthInstance } from "@/lib/firebase";
 
 interface AuthContextValue {
   user: User | null;
@@ -29,18 +29,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
+    let unsub: (() => void) | undefined;
+    try {
+      const auth = getAuthInstance();
+      unsub = onAuthStateChanged(auth, (u) => {
+        setUser(u);
+        setLoading(false);
+      });
+    } catch (e) {
+      console.error("Auth init error:", e);
       setLoading(false);
-    });
-    return unsub;
+    }
+    return () => { unsub?.(); };
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    const auth = getAuthInstance();
     await signInWithEmailAndPassword(auth, email, password);
   };
 
   const signOut = async () => {
+    const auth = getAuthInstance();
     await fbSignOut(auth);
   };
 
