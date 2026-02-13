@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   fetchAllQuestions,
@@ -14,6 +14,10 @@ import type { Question } from "@/types/game";
 import type { QuestionCategory } from "@/types/categories";
 import { CATEGORY_UI } from "@/types/categories";
 import { QuestionForm } from "@/components/admin/QuestionForm";
+import {
+  parseImportCsv,
+  importRowToQuestion,
+} from "@/lib/importQuestions";
 
 const CATEGORIES: QuestionCategory[] = [
   "club",
@@ -32,6 +36,16 @@ export default function AdminPage() {
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importPreview, setImportPreview] = useState<{
+    ok: number;
+    errors: { line: number; raw: string; message: string }[];
+  } | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importDone, setImportDone] = useState<{ created: number; failed: number } | null>(null);
+  const [importExcelLoading, setImportExcelLoading] = useState(false);
+  const [importExcelProgress, setImportExcelProgress] = useState<{ current: number; total: number } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -67,9 +81,14 @@ export default function AdminPage() {
   };
 
   const handleUpdate = async (id: string, data: Partial<Question>) => {
-    await updateQuestion(id, data);
-    setEditingId(null);
-    load();
+    try {
+      await updateQuestion(id, data);
+      setEditingId(null);
+      load();
+    } catch (e) {
+      console.error(e);
+      alert("Erreur lors de l'enregistrement. Vérifiez la console (F12).");
+    }
   };
 
   const handleToggle = async (id: string) => {
@@ -83,10 +102,121 @@ export default function AdminPage() {
     load();
   };
 
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImportText(String(reader.result ?? ""));
+      setImportPreview(null);
+      setImportDone(null);
+    };
+    reader.readAsText(file, "UTF-8");
+    e.target.value = "";
+  };
+
+  const handleParsePreview = () => {
+    const { ok, errors } = parseImportCsv(importText);
+    setImportPreview({ ok: ok.length, errors });
+  };
+
+  const handleConfirmImport = async () => {
+    const { ok, errors } = parseImportCsv(importText);
+    if (ok.length === 0) return;
+    setImporting(true);
+    setImportDone(null);
+    let created = 0;
+    let failed = 0;
+    for (const row of ok) {
+      try {
+        await createQuestion(importRowToQuestion(row));
+        created++;
+      } catch {
+        failed++;
+      }
+    }
+    setImportDone({ created, failed });
+    setImporting(false);
+    load();
+  };
+
+  const handleImportExcelPack = async () => {
+    if (!confirm("Importer les 355 questions exportées de l’Excel ? Cela va les ajouter à la base.")) return;
+    setImportExcelLoading(true);
+    setImportExcelProgress({ current: 0, total: 355 });
+    setImportDone(null);
+    let created = 0;
+    let failed = 0;
+    try {
+      const res = await fetch("/questions-import.csv");
+      const csv = await res.text();
+      const { ok } = parseImportCsv(csv);
+      const BATCH = 10;
+      for (let i = 0; i < ok.length; i += BATCH) {
+        const batch = ok.slice(i, i + BATCH);
+        const results = await Promise.allSettled(
+          batch.map((row) => createQuestion(importRowToQuestion(row)))
+        );
+        results.forEach((r) => (r.status === "fulfilled" ? created++ : failed++));
+        setImportExcelProgress({ current: Math.min(i + BATCH, ok.length), total: ok.length });
+      }
+      setImportDone({ created, failed });
+      load();
+    } catch (e) {
+      console.error(e);
+      setImportDone({ created: 0, failed: 355 });
+    } finally {
+      setImportExcelLoading(false);
+      setImportExcelProgress(null);
+    }
+  };
+
   return (
     <main className="min-h-screen min-h-[100dvh] bg-accueil text-white flex flex-col relative p-4 md:p-6">
       <div className="absolute inset-0 bg-black/50 pointer-events-none" aria-hidden />
       <div className="relative max-w-4xl mx-auto w-full flex-1">
+        {/* Bandeau Import en masse — tout en haut, très visible */}
+        <section
+          className="mb-6 rounded-xl p-4 border-2 border-amber-400 bg-amber-500/20"
+          style={{ boxShadow: "0 0 0 2px rgba(251,191,36,0.5)" }}
+          aria-label="Import en masse"
+        >
+          <h2 className="text-xl font-bold mb-2 text-amber-200">Import en masse</h2>
+          <button
+            type="button"
+            onClick={handleImportExcelPack}
+            disabled={importExcelLoading}
+            className="bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-black font-bold px-5 py-2.5 rounded-lg text-base"
+          >
+            {importExcelLoading && importExcelProgress
+              ? `Import… ${importExcelProgress.current}/${importExcelProgress.total}`
+              : "Importer les 355 questions (export Excel)"}
+          </button>
+          <p className="text-sm text-slate-300 mt-2">Ou :</p>
+          <div className="flex flex-wrap gap-2 mt-1">
+            <input ref={fileInputRef} type="file" accept=".csv,.txt" onChange={handleImportFile} className="hidden" />
+            <button type="button" onClick={() => fileInputRef.current?.click()} className="bg-slate-600 hover:bg-slate-500 px-3 py-1.5 rounded text-sm">
+              Fichier CSV
+            </button>
+            <button type="button" onClick={handleParsePreview} disabled={!importText.trim()} className="bg-slate-600 hover:bg-slate-500 disabled:opacity-50 px-3 py-1.5 rounded text-sm">
+              Prévisualiser
+            </button>
+            {importPreview && importPreview.ok > 0 && (
+              <button type="button" onClick={handleConfirmImport} disabled={importing} className="bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded text-sm font-medium">
+                {importing ? "Import…" : `Créer ${importPreview.ok} question(s)`}
+              </button>
+            )}
+          </div>
+          <textarea
+            placeholder="Coller un CSV ici (catégorie;énoncé;réponse1;réponse2;réponse3;bonne_réponse)"
+            value={importText}
+            onChange={(e) => { setImportText(e.target.value); setImportPreview(null); setImportDone(null); }}
+            className="w-full h-20 mt-2 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm font-mono resize-y"
+          />
+          {importPreview && <p className="mt-1 text-sm text-slate-300">{importPreview.ok} valide(s). {importPreview.errors.length > 0 && `${importPreview.errors.length} erreur(s).`}</p>}
+          {importDone && <p className="mt-1 text-emerald-400 font-medium">Terminé : {importDone.created} créée(s), {importDone.failed} échec(s).</p>}
+        </section>
+
         <header className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
             <Link href="/" className="text-slate-400 hover:text-white text-sm">
@@ -94,13 +224,9 @@ export default function AdminPage() {
             </Link>
             <h1 className="text-2xl font-bold">Admin – Questions</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm text-slate-400">{user?.email}</span>
-            <button
-              type="button"
-              onClick={() => signOut()}
-              className="text-sm bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded"
-            >
+            <button type="button" onClick={() => signOut()} className="text-sm bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded">
               Déconnexion
             </button>
           </div>
@@ -136,6 +262,17 @@ export default function AdminPage() {
             + Nouvelle question
           </button>
         </div>
+
+        {importPreview && importPreview.errors.length > 0 && (
+          <ul className="mb-4 text-red-300 text-sm list-disc list-inside">
+            {importPreview.errors.slice(0, 5).map((e, i) => (
+              <li key={i}>Ligne {e.line} : {e.message}</li>
+            ))}
+            {importPreview.errors.length > 5 && (
+              <li>… et {importPreview.errors.length - 5} autre(s) erreur(s)</li>
+            )}
+          </ul>
+        )}
 
         {loading ? (
           <p className="text-slate-400">Chargement…</p>

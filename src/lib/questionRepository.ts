@@ -12,7 +12,7 @@ import {
   deleteDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import type { DocumentData } from "firebase/firestore";
+import type { DocumentData, UpdateData } from "firebase/firestore";
 import { getDb } from "./firebase";
 import type { QuestionCategory } from "@/types/categories";
 import type { Question } from "@/types/game";
@@ -89,7 +89,17 @@ export async function updateQuestion(
 ): Promise<void> {
   const db = getDb();
   const ref = doc(db, COLLECTION, id);
-  await updateDoc(ref, { ...data, updatedAt: serverTimestamp() });
+  const payload: UpdateData<DocumentData> = {
+    updatedAt: serverTimestamp(),
+  };
+  if (data.category !== undefined) payload.category = data.category;
+  if (data.prompt !== undefined) payload.prompt = data.prompt;
+  if (data.choices !== undefined) payload.choices = data.choices;
+  if (typeof data.answerIndex === "number") payload.answerIndex = data.answerIndex;
+  if (data.isActive !== undefined) payload.isActive = data.isActive;
+  if (data.difficulty !== undefined) payload.difficulty = data.difficulty;
+  if (data.tags !== undefined) payload.tags = data.tags;
+  await updateDoc(ref, payload);
 }
 
 export async function toggleQuestionActive(id: string): Promise<void> {

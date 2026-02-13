@@ -46,17 +46,25 @@ export default function SetupPage() {
           className="w-full max-w-md bg-black/60 rounded-2xl p-4 space-y-4"
         >
           <div>
-            <label className="block text-sm mb-1">
-              Nombre de joueurs (2 à 6)
+            <label className="block text-sm mb-2">
+              Nombre de joueurs
             </label>
-            <input
-              type="number"
-              min={2}
-              max={6}
-              value={playerCount}
-              onChange={(e) => handleCountChange(Number(e.target.value))}
-              className="w-24 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-center"
-            />
+            <div className="flex flex-wrap gap-2">
+              {[2, 3, 4, 5, 6].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => handleCountChange(n)}
+                  className={`w-12 h-12 rounded-xl font-bold text-lg transition ${
+                    playerCount === n
+                      ? "bg-red-600 text-white ring-2 ring-red-400"
+                      : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-2">

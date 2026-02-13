@@ -73,10 +73,11 @@ Coche **Production**, **Preview** et **Development** pour chaque variable.
 
 - **Build échoue** : vérifie les logs dans l’onglet **Deployments** sur Vercel.
 - **Erreur Firebase en prod** : vérifie que toutes les variables `NEXT_PUBLIC_*` sont bien renseignées dans **Project Settings** → **Environment Variables**, et que le domaine Vercel est dans les domaines autorisés Firebase.
-- **Impossible de se connecter à l’admin** (en prod) :
-  1. **Domaines autorisés** : [Console Firebase](https://console.firebase.google.com) → ton projet → **Authentication** → **Settings** (Paramètres) → **Authorized domains** (Domaines autorisés). Ajoute **exactement** le domaine de ton app (ex. `ton-projet.vercel.app` **sans** `https://`). Sans cela, Firebase refuse la connexion.
-  2. **Utilisateur existant** : l’email/mot de passe doivent correspondre à un utilisateur créé dans **Authentication** → **Users** → **Add user**.
-  3. En local : vérifie que `.env.local` est bien rempli et que tu as redémarré `npm run dev` après modification.
+- **Impossible de se connecter à l’admin** (en prod ou après avoir créé un nouvel utilisateur) :
+  1. **Méthode E-mail activée** : [Console Firebase](https://console.firebase.google.com) → ton projet → **Authentication** → onglet **Sign-in method** (Connexion). Active **E-mail/Mot de passe** (Email/Password). Sans cela, la connexion par email est refusée.
+  2. **Créer un nouvel utilisateur** : **Authentication** → **Users** (Utilisateurs) → **Add user** (Ajouter un utilisateur). Saisis l’email et un mot de passe (au moins 6 caractères). C’est le seul endroit où créer un compte admin ; il n’y a pas d’inscription dans l’app.
+  3. **Domaines autorisés** : **Authentication** → **Settings** (Paramètres) → **Authorized domains** (Domaines autorisés). Ajoute **exactement** le domaine du site (ex. `ton-projet.vercel.app` sans `https://`, ou `localhost` pour les tests en local).
+  4. En local : vérifie que `.env.local` est bien rempli et que tu as redémarré `npm run dev` après modification.
 - **Code NOT_FOUND (404)** :
   1. **Root Directory** : dans **Settings** → **General**, le champ **Root Directory** doit être **vide** (ne pas mettre de chemin). Si un dossier est indiqué, Vercel cherche l’app au mauvais endroit.
   2. **Framework** : **Framework Preset** doit être **Next.js** (pas "Other").

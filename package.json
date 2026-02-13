@@ -6,7 +6,9 @@
     "dev": "next dev -p 3002",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "excel-to-csv": "node scripts/excel-to-csv.js",
+    "seed-questions": "node scripts/seed-questions.js"
   },
   "dependencies": {
     "firebase": "^11.0.2",
@@ -16,13 +18,18 @@
     "zustand": "^5.0.1"
   },
   "devDependencies": {
+    "@opentelemetry/api": "^1.9.0",
     "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "dotenv": "^17.3.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "14.2.18",
+    "firebase-admin": "^13.6.1",
+    "pdf-parse": "^2.4.5",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "xlsx": "^0.18.5"
   }
 }

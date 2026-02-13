@@ -26,6 +26,8 @@ yarn-error.log*
 # env
 .env
 .env.local
+# Firebase Admin (clé de compte de service, ne pas versionner)
+scripts/serviceAccountKey.json
 .env.development.local
 .env.test.local
 .env.production.local

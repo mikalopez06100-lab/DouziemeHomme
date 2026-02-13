@@ -2,16 +2,19 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useGameSessionStore } from "@/store/gameSession";
 import { CategoryPicker } from "@/components/game/CategoryPicker";
 import { QuestionCard } from "@/components/game/QuestionCard";
 import { useCurrentQuestion } from "@/hooks/useCurrentQuestion";
 
 export default function GamePage() {
+  const router = useRouter();
   const currentPlayer = useGameSessionStore((s) => s.getCurrentPlayer());
   const currentCategory = useGameSessionStore((s) => s.currentCategory);
   const setCurrentCategory = useGameSessionStore((s) => s.setCurrentCategory);
   const nextPlayer = useGameSessionStore((s) => s.nextPlayer);
+  const resetSession = useGameSessionStore((s) => s.resetSession);
 
   const { question, loadQuestion, markAsAsked, isLoading, error } =
     useCurrentQuestion(currentCategory);
@@ -80,6 +83,19 @@ export default function GamePage() {
             </button>
           </div>
         )}
+
+        <div className="mt-auto pt-8 w-full max-w-md">
+          <button
+            type="button"
+            onClick={() => {
+              resetSession();
+              router.push("/");
+            }}
+            className="w-full py-3 rounded-xl border-2 border-slate-500 text-slate-300 hover:bg-slate-800 hover:text-white transition font-medium"
+          >
+            Fin de partie
+          </button>
+        </div>
       </div>
     </main>
   );

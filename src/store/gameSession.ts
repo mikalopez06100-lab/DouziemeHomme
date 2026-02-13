@@ -4,6 +4,8 @@ import { create } from "zustand";
 import type { QuestionCategory } from "@/types/categories";
 import type { GameSessionState, Player } from "@/types/game";
 
+/** Session de jeu en mémoire uniquement (pas de localStorage). Une partie = un onglet. */
+
 interface GameSessionStore extends GameSessionState {
   initSession: (names: string[]) => void;
   getCurrentPlayer: () => Player | null;

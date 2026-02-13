@@ -66,23 +66,21 @@ export function QuestionForm({ initial, onSave, onCancel }: QuestionFormProps) {
       return;
     }
 
-    if (initial) {
-      onSave({
-        category,
-        prompt: prompt.trim(),
-        choices: validChoices,
-        answerIndex,
-        isActive,
-      });
-    } else {
-      onSave({
-        category,
-        prompt: prompt.trim(),
-        choices: validChoices,
-        answerIndex,
-        isActive,
-      });
-    }
+    // Index de la bonne réponse dans validChoices (au cas où des choix vides décalent les indices)
+    const selectedText = choices[answerIndex]?.trim();
+    const savedAnswerIndex = selectedText
+      ? validChoices.findIndex((c) => c === selectedText)
+      : 0;
+    const finalAnswerIndex = savedAnswerIndex >= 0 ? savedAnswerIndex : 0;
+
+    const payload = {
+      category,
+      prompt: prompt.trim(),
+      choices: validChoices,
+      answerIndex: finalAnswerIndex,
+      isActive,
+    };
+    onSave(initial ? payload : payload);
   };
 
   const addChoice = () => {

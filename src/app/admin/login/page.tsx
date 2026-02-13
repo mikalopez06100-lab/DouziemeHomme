@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -8,8 +8,12 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
-  const { signIn } = useAuth();
+  const { signIn, user } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (user) router.replace("/admin");
+  }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,19 +24,26 @@ export default function AdminLoginPage() {
     }
     try {
       await signIn(email.trim(), password);
-      router.replace("/admin");
+      // La redirection se fait via useEffect quand user est mis à jour par Firebase
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "";
-      if (msg.includes("auth/invalid-credential") || msg.includes("auth/wrong-password") || msg.includes("auth/user-not-found")) {
-        setErr("Email ou mot de passe incorrect.");
-      } else if (msg.includes("auth/invalid-email")) {
+      const code = e && typeof e === "object" && "code" in e ? String((e as { code: string }).code) : "";
+      console.error("Erreur connexion admin:", code || msg, e);
+      if (msg.includes("auth/invalid-credential") || code === "auth/invalid-credential" || msg.includes("auth/wrong-password") || msg.includes("auth/user-not-found")) {
+        setErr("Email ou mot de passe incorrect. Vérifiez que l'utilisateur a bien été créé dans Firebase (Authentication → Utilisateurs → Ajouter un utilisateur).");
+      } else if (msg.includes("auth/invalid-email") || code === "auth/invalid-email") {
         setErr("Adresse email invalide.");
-      } else if (msg.includes("auth/too-many-requests")) {
+      } else if (msg.includes("auth/too-many-requests") || code === "auth/too-many-requests") {
         setErr("Trop de tentatives. Réessayez plus tard.");
-      } else if (msg.includes("auth/operation-not-allowed") || msg.includes("unauthorized")) {
-        setErr("Connexion refusée. Vérifiez que le domaine est autorisé dans Firebase (Authentication → Paramètres → Domaines autorisés).");
+      } else if (msg.includes("auth/operation-not-allowed") || code === "auth/operation-not-allowed") {
+        setErr("Connexion par email désactivée. Dans Firebase Console : Authentication → Onglet « Connexion » → activez « E-mail/Mot de passe ».");
+      } else if (msg.includes("auth/unauthorized-domain") || code === "auth/unauthorized-domain") {
+        setErr("Domaine non autorisé. Firebase Console → Authentication → Paramètres → Domaines autorisés → ajoutez l’URL du site (ex. ton-site.vercel.app ou localhost).");
+      } else if (msg.includes("auth/user-disabled") || code === "auth/user-disabled") {
+        setErr("Ce compte a été désactivé.");
       } else {
-        setErr(msg || "Connexion impossible. Vérifiez vos identifiants et que le site est autorisé dans Firebase.");
+        const detail = code ? ` (${code})` : (msg ? ` — ${msg}` : "");
+        setErr("Connexion impossible." + detail + " Vérifiez la checklist ci-dessous.");
       }
     }
   };
@@ -68,6 +79,15 @@ export default function AdminLoginPage() {
         >
           Se connecter
         </button>
+        <details className="text-xs text-slate-400 mt-4">
+          <summary className="cursor-pointer hover:text-slate-300">Connexion impossible ?</summary>
+          <ul className="mt-2 list-disc list-inside space-y-1 text-slate-500">
+            <li>Firebase Console → <strong>Authentication → Connexion</strong> : activer « E-mail/Mot de passe ».</li>
+            <li>Créer l’utilisateur dans <strong>Authentication → Utilisateurs → Ajouter un utilisateur</strong> (email + mot de passe, 6 caractères min).</li>
+            <li><strong>Paramètres → Domaines autorisés</strong> : ajouter <code className="bg-slate-800 px-1">localhost</code> (en local) ou ton domaine Vercel (ex. xxx.vercel.app).</li>
+            <li>Ouvre la console du navigateur (F12) pour voir le détail de l’erreur Firebase.</li>
+          </ul>
+        </details>
       </form>
     </main>
   );
