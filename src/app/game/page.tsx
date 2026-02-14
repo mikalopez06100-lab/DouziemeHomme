@@ -7,6 +7,7 @@ import { useGameSessionStore } from "@/store/gameSession";
 import { CategoryPicker } from "@/components/game/CategoryPicker";
 import { QuestionCard } from "@/components/game/QuestionCard";
 import { useCurrentQuestion } from "@/hooks/useCurrentQuestion";
+import { LogoDouziemeHomme } from "@/components/LogoDouziemeHomme";
 
 export default function GamePage() {
   const router = useRouter();
@@ -50,7 +51,7 @@ export default function GamePage() {
     <main className="min-h-screen min-h-[100dvh] bg-accueil text-white flex flex-col relative">
       <div className="absolute inset-0 bg-black/50 pointer-events-none" aria-hidden />
       <div className="relative flex flex-col flex-1 items-center py-6 px-4 max-w-xl mx-auto">
-        <div className="h-20 shrink-0" aria-hidden />
+        <LogoDouziemeHomme className="shrink-0 mb-2" />
 
         <p className="text-base sm:text-lg font-bold uppercase tracking-wide text-white mb-4 drop-shadow-md">
           Joueur actuel : <span className="text-amber-300">{currentPlayer.name}</span>
