@@ -1,10 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 export const metadata: Metadata = {
   title: "Douzième Homme",
   description: "Quiz du jeu de plateau Douzième Homme",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "Douzième Homme" },
+  icons: { icon: "/logo-douzieme-homme.png", apple: "/logo-douzieme-homme.png" },
 };
 
 export const viewport: Viewport = {
@@ -30,7 +34,10 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased bg-slate-900 text-white">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <InstallPrompt />
+        </AuthProvider>
       </body>
     </html>
   );
