@@ -13,6 +13,8 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+const fondAccueilUrl = process.env.NEXT_PUBLIC_FOND_ACCUEIL_URL || "/fond-accueil.png";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -20,6 +22,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
+      <head>
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `:root { --fond-accueil-url: url('${fondAccueilUrl.replace(/'/g, "\\'")}'); }`,
+          }}
+        />
+      </head>
       <body className="antialiased bg-slate-900 text-white">
         <AuthProvider>{children}</AuthProvider>
       </body>

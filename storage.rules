@@ -1,0 +1,11 @@
+rules_version = '2';
+// À déployer avec: firebase deploy --only storage
+// Permet la lecture publique des images (fond d'accueil, etc.)
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /images/{allPaths=**} {
+      allow read;
+      allow write: if false;
+    }
+  }
+}

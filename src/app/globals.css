@@ -4,7 +4,7 @@
 
 /* Fond page d'accueil : illustration stade, optimisé mobile */
 .bg-accueil {
-  background-image: url("/fond-accueil.png");
+  background-image: var(--fond-accueil-url, url("/fond-accueil.png"));
   background-repeat: no-repeat;
   background-color: #0f172a; /* fallback si l'image charge lentement */
   min-height: 100vh;
